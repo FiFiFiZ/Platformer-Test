@@ -8,13 +8,19 @@ class Assets:
             ("ground", "add_n", 9)
         ]  # names with special second (or more) item get special treatment in loading (like loading both 0 and 1 name-ending variants)
 
+        self.SCREEN_WIDTH = pygame.display.Info().current_w
+        self.SCREEN_HEIGHT = pygame.display.Info().current_h
+        self.SCREEN_WIDTH = 640
+        self.SCREEN_HEIGHT = 360
+        self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
+
         for i in range (len(to_load)):
             image_path = "src/sprites/"
             if to_load[i][1] == "add_n":
                 # add_n special (starts at 1):
                 image_path += f"{to_load[i][0]}"
                 for j in range (to_load[i][2]):
-                    self.sprites[to_load[i][0] + str(j)] = pygame.image.load(image_path + str(j) + ".png").convert()
+                    self.sprites[to_load[i][0] + str(j)] = pygame.image.load(image_path + str(j) + ".png")
             else:
                 image_path += f"{to_load[i][0]}.png"
                 if to_load[i][1] == "keep_transparency":
