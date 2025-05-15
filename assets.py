@@ -29,3 +29,5 @@ class Assets:
                 else:
                     # standard load:
                     self.sprites[to_load[i][0]] = pygame.image.load(image_path)
+
+                    # self.sprites[to_load[i]].colorkey((153, 102, 255))
