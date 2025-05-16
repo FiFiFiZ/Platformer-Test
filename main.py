@@ -29,32 +29,15 @@ class Game:
         self.player_xs = 0
         self.player_ys = 0
 
-        self.CAMX = 0
-        self.CAMY = 0
+        self.SCRX = self.player_x
+        self.SCRY = self.player_y
+        self.CAMX = self.player_x
+        self.CAMY = self.player_y
         self.zoom = 1
 
         self.ground_positions = []
         self.ground_positions_rel = []
         self.ground_textures_to_render = []
-
-        # y = 72
-        # for i in range(3):
-        #     x = -128
-        #     for n in range(3):
-        #         self.ground_positions.append((x*2,y*2))
-        #         self.ground_positions_rel.append((x*2,y*2))
-        #         x += 128
-        #     y -= 72
-
-        
-        # y = -72
-        # for i in range(3):
-        #     x = -128
-        #     for n in range(3):
-        #         self.ground_positions.append((x,y))
-        #         self.ground_positions_rel.append((x,y))
-        #         x += 128
-        #     y += 72
 
         y = -72
         for i in range(3):
@@ -70,40 +53,35 @@ class Game:
         self.sprites[img] = pygame.transform.scale(self.sprites[img], (128*self.zoom, 72*self.zoom))
         return self.sprites[img]
 
-    def check_collision(self, i, x, y, ground_texture):
-        player_mask = pygame.mask.from_surface(self.sprites["player"])
+    def check_collision(self, ground_texture, player_pos, ground_pos, type):
+        px, py = player_pos
+        gx, gy = ground_pos
 
-        # overlap = player_mask.overlap(ground_mask, ((self.player_xs), (self.player_ys)))
-        ground_mask = pygame.mask.from_surface(ground_texture)
-        x = self.ground_positions_rel[i][0]*self.zoom-self.SCRX
-        y = self.ground_positions_rel[i][1]*self.zoom-self.SCRY
-        overlap = ground_mask.overlap(player_mask, (x, y))
-        # print(i, overlap)
+        gmask = pygame.mask.from_surface(ground_texture)
+        pmask = pygame.mask.from_surface(self.sprites["player"])
 
-        ground_texture = ground_mask.to_surface(setcolor=(255, 255, 255, 255), unsetcolor=(0, 0, 0, 255))
-        player_texture = player_mask.to_surface(setcolor=(255, 255, 255, 255), unsetcolor=(0, 0, 0, 255))
-        self.screen.blit(ground_texture, (x, y))
-        self.screen.blit(player_texture, (x, y))
-            
-
-        # player_mask.invert()
-        # ground_mask.invert()
-
-        player_mask = player_mask.to_surface(setcolor=(255, 255, 255, 255), unsetcolor=(0, 0, 0, 255))
-        ground_mask = ground_mask.to_surface(setcolor=(255, 255, 255, 255), unsetcolor=(0, 0, 0, 255))
-
-        # self.screen.blit(ground_mask, (0, 0))
-        # self.screen.blit(player_mask, (self.player_x, self.player_y))
+        # goverlap = gmask.overlap_mask(pmask, (px-gx, py-gy))
+        goverlap_showcase = pmask.overlap_mask(gmask, (gx-px, gy-py)) 
+        goverlap = pmask.overlap(gmask, (gx-px, gy-py))
 
 
-        # overlap = ground_mask.overlap(player_mask, ((self.player_xs), (self.player_ys)))
-        if overlap == None:
-            print(i, None)
-            pass
-        else:
-            print(i, overlap)
-            pass
-        pass
+        if goverlap != None:
+            if type == "x":
+                if self.player_xs > 0:
+                    self.player_xs = 0
+                elif self.player_xs < 0:
+                    pass
+            elif type == "y":
+                pass
+
+
+        govtoprint = goverlap_showcase.to_surface(setcolor=(255, 255, 255, 255), unsetcolor=(0, 0, 0, 255))
+        self.screen.blit(govtoprint, (0+(type=="y")*100, 0))
+        
+
+        print(goverlap)
+        
+
 
     def player_move(self):
         keydir = 0
@@ -114,14 +92,13 @@ class Game:
         self.player_xs += keydir
         self.player_xs *= 0.85
  
+        self.player_ys = 0
         if self.key_held[pygame.K_UP] == True:
-            self.player_y -= 5
+            self.player_ys -= 5
         if self.key_held[pygame.K_DOWN] == True:
-            self.player_y += 5
+            self.player_ys += 5
 
 
-        self.player_x += self.player_xs
-        self.player_y += self.player_ys
 
     def game_run(self):
         while self.run:
@@ -138,58 +115,54 @@ class Game:
             self.targ_zoom = 1            
 
 
+
+
+            # move and collide
             self.sprites["player"] = pygame.transform.scale(self.sprites["player"], (8*factor, 8*factor))
-            # self.player_x, self.player_y = pygame.mouse.get_pos()
-            
-
-
             self.player_move()
 
+            self.SCRX += self.player_xs
+            self.SCRY += self.player_ys
+
+            # px = self.SCRX-self.player_x+320
+            # py = self.SCRY-self.player_y+180
+            # self.screen.blit(self.sprites["player"], (px, py))
+
+            x = 128-self.SCRX
+            y = 72-self.SCRY
+            # self.screen.blit(self.sprites["ground0"], (x, y))
+
+            # check x collision
+            px = self.SCRX-self.player_x+320+self.player_xs
+            py = self.SCRY-self.player_y+180
+
+            self.check_collision(self.sprites["ground0"], (px, py), (x, y), "x")
+
+            # check y collision
+            px = self.SCRX-self.player_x+320 
+            py = self.SCRY-self.player_y+180+self.player_ys
+
+            self.check_collision(self.sprites["ground0"], (px, py), (x, y), "y")
+
+
+            # update pos and render
+            self.player_x += self.player_xs
+            self.player_y += self.player_ys
             self.SCRX = self.player_x
             self.SCRY = self.player_y
+            px = self.SCRX-self.player_x+320
+            py = self.SCRY-self.player_y+180
+
+            self.screen.blit(self.sprites["player"], (px, py)) # render with cam var ofc
+            self.screen.blit(self.sprites["ground0"], (x, y))
+
+
             self.CAMX += (self.player_x-self.CAMX)/3
             self.CAMY += (self.player_y-self.CAMY)/3
-
-            # print(self.SCRX, self.SCRY)
-
-            # self.screen.blit(self.sprites["ground0"], (0, 0))
-            
-            # self.screen.blit(self.sprites["player"], (self.SCRX-self.player_x+320, self.SCRY-self.player_y+180))
-            # self.screen.blit(self.sprites["player"], (self.SCRX-self.player_x+320, self.SCRY-self.player_y+180))
-            self.screen.blit(self.sprites["player"], (self.SCRX-self.player_x, self.SCRY-self.player_y))
-
-            
-            for i in range(1):
-                i = 8
-                # replace the i in self.sprites[f"ground{i}"] with actual texture number
-                x = self.ground_positions_rel[i][0]
-                y = self.ground_positions_rel[i][1]
-
-                x = self.ground_positions_rel[i][0]*self.zoom-self.SCRX
-                y = self.ground_positions_rel[i][1]*self.zoom-self.SCRY
-
-                # self.ground_positions[i] = (-(self.SCRX-x*factor-(128*factor)/2), -(self.SCRY-y*factor-(72*factor)/2))
-                self.ground_positions[i] = (x, y)
-
-                
-                self.check_collision(i, x, y, self.sprites[f"ground{i}"])
-
-                # update zooming on ground texture (so if your texture actually represents another one than before, it would update here, insert the ground)
-                # there are 9 ground displays
-                self.ground_textures_to_render[i] = i
-            
-                # self.screen.blit(self.sprites[f"ground{i}"], self.ground_positions[i])
-                
-                # print(i, self.ground_positions[i])  -((128*factor))   (72*factor)/2)
 
             if self.zoom != self.targ_zoom:
                 # zoom
                 self.zoom += (self.targ_zoom - self.zoom)/3
-                for i in range(len(self.ground_textures_to_render)):
-                    # if not initial
-                    if self.ground_textures_to_render[i] != "":
-                        self.sprites[f"ground{i}"] = self.load_zoomed(f"ground{i}")
-
 
 
             for event in pygame.event.get():
