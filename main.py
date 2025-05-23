@@ -58,7 +58,7 @@ class Game:
         gx, gy = ground_pos
 
         gmask = pygame.mask.from_surface(ground_texture)
-        pmask = pygame.mask.from_surface(self.sprites["player"])
+        pmask = pygame.mask.from_surface(self.sprites[f"playerh {type}"])
 
         # goverlap = gmask.overlap_mask(pmask, (px-gx, py-gy))
         goverlap_showcase = pmask.overlap_mask(gmask, (gx-px, gy-py)) 
@@ -66,13 +66,18 @@ class Game:
 
 
         if goverlap != None:
-            if type == "x":
+            if type == "right":
                 if self.player_xs > 0:
                     self.player_xs = 0
-                elif self.player_xs < 0:
-                    pass
-            elif type == "y":
-                pass
+            elif type == "left":
+                if self.player_xs < 0:
+                    self.player_xs = 0
+            elif type == "top":
+                if self.player_ys > 0:
+                    self.player_ys = 0
+            elif type == "bottom":
+                if self.player_ys < 0:
+                    self.player_ys = 0
 
 
         govtoprint = goverlap_showcase.to_surface(setcolor=(255, 255, 255, 255), unsetcolor=(0, 0, 0, 255))
@@ -132,17 +137,31 @@ class Game:
             y = 72-self.SCRY
             # self.screen.blit(self.sprites["ground0"], (x, y))
 
-            # check x collision
-            px = self.SCRX-self.player_x+320+self.player_xs
-            py = self.SCRY-self.player_y+180
+            # check right collision
+            px = self.SCRX-self.player_x+320+  self.sprites["player"].get_width() + self.player_xs
+            py = self.SCRY-self.player_y+180+  self.player_ys
 
-            self.check_collision(self.sprites["ground0"], (px, py), (x, y), "x")
+            self.check_collision(self.sprites["ground0"], (px, py), (x, y), "right")
+            
+            # check left collision
+            px = self.SCRX-self.player_x+320-  self.sprites["playerh left"].get_width() + self.player_xs
+            py = self.SCRY-self.player_y+180+  self.player_ys
 
-            # check y collision
-            px = self.SCRX-self.player_x+320 
-            py = self.SCRY-self.player_y+180+self.player_ys
+            self.check_collision(self.sprites["ground0"], (px, py), (x, y), "left")
+        
+            # check bottom collision
+            px = self.SCRX-self.player_x+320+ self.player_xs
+            py = self.SCRY-self.player_y+180+  self.sprites["player"].get_height() + self.player_ys
 
-            self.check_collision(self.sprites["ground0"], (px, py), (x, y), "y")
+            self.check_collision(self.sprites["ground0"], (px, py), (x, y), "bottom")
+
+            # check top collision
+            px = self.SCRX-self.player_x+320+ self.player_xs
+            py = self.SCRY-self.player_y+180-  self.sprites["playerh top"].get_height() + self.player_ys
+
+            self.check_collision(self.sprites["ground0"], (px, py), (x, y), "top")
+
+
 
 
             # update pos and render
