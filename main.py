@@ -53,7 +53,19 @@ class Game:
         self.sprites[img] = pygame.transform.scale(self.sprites[img], (128*self.zoom, 72*self.zoom))
         return self.sprites[img]
 
-    def check_collision(self, ground_texture, player_pos, ground_pos, type):
+    def scatter(self, ground_texture, player_pos, ground_pos, type, return_val, dir, position_offset):
+        returned = None
+        while returned == None:
+            position_offset = position_offset + dir
+            self.check_collision(ground_texture, player_pos, ground_pos, type, return_val)
+
+    def test_render(self, ground_texture, player_pos, ground_pos, type):
+        self.screen.fill((0,0,0))
+        self.screen.blit(ground_texture, ground_pos)
+        self.screen.blit(self.sprites[f"playerh {type}"], player_pos)
+        pygame.display.update()
+
+    def check_collision(self, ground_texture, player_pos, ground_pos, type, return_val=None):
         px, py = player_pos
         gx, gy = ground_pos
 
@@ -64,11 +76,51 @@ class Game:
         goverlap_showcase = pmask.overlap_mask(gmask, (gx-px, gy-py)) 
         goverlap = pmask.overlap(gmask, (gx-px, gy-py))
 
+        if return_val != None:
+            return goverlap
 
         if goverlap != None:
             if type == "right":
                 if self.player_xs > 0:
+                    returned = None
+                    position_offset = self.player_xs  # offset final position by this much (starts at initial speed then goes back in the other direction until no collision)
+
+                    if type == "right" or type == "down": # direction to go in
+                        dir = -1
+                    else:
+                        dir = 1
+
+                    if type == "right" or type == "left": # axis
+                        axis = 0
+                        position_offset = self.player_xs
+
+                        returned = None
+                        i = 0
+                        while returned == None and i < 300:
+                            position_offset = position_offset + dir
+                            returned = self.check_collision(ground_texture, (player_pos[0] + position_offset, player_pos[1]), ground_pos, type, type)
+                            self.test_render(ground_texture, (player_pos[0] + position_offset, player_pos[1]), ground_pos, type)
+                            i += 1
+
+                        if i == 299:
+                            exit()
+                        else:
+                            self.player_x += position_offset - self.player_xs
+                            print(position_offset)
+                        
+                        self.player_xs = 0
+
+
+                    else:
+                        pass
+                        # axis = 1
+                        # position_offset = self.player_ys
+                        # position_offset = self.scatter(ground_texture, (player_pos[0], position_offset), ground_pos, type, type, dir, position_offset)
+
+
                     self.player_xs = 0
+                    
+                    
             elif type == "left":
                 if self.player_xs < 0:
                     self.player_xs = 0
